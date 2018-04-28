@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Configuration status="warn" monitorInterval="30">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{DEFAULT} [%t] %-5level %logger{36} - %msg%n" />
+        </Console>
+         <Console name="myLog" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss}-%M-%msg%n" />
+        </Console>
+         
+    </Appenders>
+    
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console" />
+        </Root>
+        <Logger name="myLog" level="info" additivity="false">
+            <AppenderRef ref="myLog"/>
+        </Logger>
+      <!-- 第三方日志系统 -->  
+        <logger name="org.springframework.core" level="info"/>  
+        <logger name="org.springframework.beans" level="info"/>  
+        <logger name="org.springframework.context" level="info"/>  
+        <logger name="org.springframework.web" level="info"/>  
+        <logger name="org.apache.http" level="warn"/>  
+    </Loggers>
+    
+</Configuration>
