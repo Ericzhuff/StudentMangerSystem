@@ -7,63 +7,70 @@ layui.config({
 		$ = layui.jquery;
 		$form = $('form');
 		var basePath = $("body",window.parent.parent.document).attr("basePath");
-		$.ajaxSetup({  
-		    async : false  
-		}); 
-		var id
+		LoadData();
 	//加载页面数据
-	if($('.id', window.parent.document).val() != undefined){
-		id=$('.id', window.parent.document).val();
-	}else{
-		id = $(".childrenBody")["0"].baseURI.substring($(".childrenBody")["0"].baseURI.indexOf("=")+1,$(".childrenBody")["0"].baseURI.length);
+	function LoadData(){
+		$.get(basePath+"score/findByStudent?stu_id="+$(".userName",window.parent.parent.document).val(), function(data){
+			var scoreList = data.scoreList.sort(function(a,b){  
+		        return a.course_id - b.course_id;  
+		    });  
+	        	newsList(scoreList);
+		})
 	}
-	loadData();
-	function loadData(){
-	var newsData = '';
-		$.get(basePath+"studentInfo/courseSelected?id="+id, function(data){
-			   data.sort(function(a,b){  
-			        return a.id - b.id;  
-			    });  
-        	newsData = data;
-        	newsList(newsData);
-			//执行加载数据的方法
-			newsList();
-	})
-	}
-
+	
 	//查询
 	$(".search_btn").click(function(){
 		var newArray = [];
 		if($(".search_input").val() != ''){
 			var index = layer.msg('查询中，请稍候',{icon: 16,time:false,shade:0.8});
-			 setTimeout(function(){
-	            	$.ajax({
-						url : basePath+"course/findByKeyWords",
-						type : "post",
-						dataType : "json",
-						data:{"keywords":$(".search_input").val()},
-						success : function(data){
-				        	newsList(data);
-							newsList();
-						}
-					})
-	            	
-	                layer.close(index);
-	            },2000);
-
+            setTimeout(function(){
+            	$.ajax({
+					url : "/shangcheng/studentInfo/findByKeyWords",
+					type : "post",
+					dataType : "json",
+					data:{"keywords":$(".search_input").val()},
+					success : function(data){
+			        	newsList(data);
+					}
+				})
+                layer.close(index);
+            },2000);
 		}else{
 			layer.msg("请输入需要查询的内容");
 		}
 	})
 
+	//添加学生
+	$(".studentAdd_btn").click(function(){
+		var index = layui.layer.open({
+			title : "添加学生",
+			type : 2,
+			content : "studentInfoAdd.jsp",
+			success : function(layero, index){
+				layui.layer.tips('点击此处返回学生信息列表', '.layui-layer-setwin .layui-layer-close', {
+					tips: 3
+				});
+				//$("#layui-layer-iframe"+index).css("height","640px");
+			}
+		})
+		//改变窗口大小时，重置弹窗的高度，防止超出可视区域（如F12调出debug的操作）
+		$(window).resize(function(){
+			layui.layer.full(index);
+		})
+		layui.layer.full(index);
+	})
 
-	//批量退选
+
+
+	
+
+	//批量删除
 	$(".batchDel").click(function(){
 		var $checkbox = $('.news_list tbody input[type="checkbox"][name="checked"]');
 		var $checked = $('.news_list tbody input[type="checkbox"][name="checked"]:checked');
 		if($checkbox.is(":checked")){
-			layer.confirm('确定退选选中课程？',{icon:3, title:'提示信息'},function(index){
-				var index = layer.msg('退选中，请稍候',{icon: 16,time:false,shade:0.8});
+			layer.confirm('确定删除选中的信息？',{icon:3, title:'提示信息'},function(index){
+				var index = layer.msg('删除中，请稍候',{icon: 16,time:false,shade:0.8});
 	            setTimeout(function(){
 	            	//删除数据
 	            	var ids="";
@@ -71,21 +78,21 @@ layui.config({
 	            		ids += $($checked[i]).attr("data-id")+",";
 	            	}
 	            	$.ajax({
-	    				"url":basePath+"course/withdrawal",
-	    				"data":{"ids":ids.substring(0,ids.length-1),"studentId":id},
+	    				"url":"/shangcheng/studentInfo/delete",
+	    				"data":{"ids":ids.substring(0,ids.length-1)},
 	    				"success":function(data){
-	    					layer.msg("退选成功");
-	    					loadData();
+	    					layer.msg("删除成功");
+	    					LoadData();
 	    				}
 	    			})
 	            	$('.news_list thead input[type="checkbox"]').prop("checked",false);
 	            	form.render();
 	                layer.close(index);
-					layer.msg("退选成功");
+					layer.msg("删除成功");
 	            },2000);
 	        })
 		}else{
-			layer.msg("请选择需要退选的课程");
+			layer.msg("请选择需要删除的文章");
 		}
 	})
 
@@ -120,17 +127,18 @@ layui.config({
 	})
  
 	//操作
-	$("body").on("click",".course_edit",function(){  //编辑
+	$("body").on("click",".stu_edit",function(){  //编辑
 		var _this = $(this);
 		console.log(_this);
 		var index = layui.layer.open({
 			title : "修改学生信息",
 			type : 2,
-			content : basePath+"course/edit?id="+_this.attr("data-id"),
+			content : "/shangcheng/studentInfo/edit?id="+_this.attr("data-id"),
 			success : function(layero, index){
 				layui.layer.tips('点击此处返回学生信息列表', '.layui-layer-setwin .layui-layer-close', {
 					tips: 3
 				});
+				//$("#layui-layer-iframe"+index).css("height","640px");
 			}
 		})
 		//改变窗口大小时，重置弹窗的高度，防止超出可视区域（如F12调出debug的操作）
@@ -140,27 +148,59 @@ layui.config({
 		layui.layer.full(index);
 	})
 
-
-	$("body").on("click",".course_del",function(){  //退选
+	$("body").on("click",".stu_view",function(){  //详细
 		var _this = $(this);
-		layer.confirm('确定退选'+_this["0"].parentElement.parentElement.childNodes[2].innerHTML+'课程？',{icon:3, title:'提示信息'},function(){
-		var index = layer.msg('退选中，请稍候',{icon: 16,time:false,shade:0.8});
-		$.ajax({
-			"url":basePath+"course/withdrawal",
-			"data":{"ids":$(_this).attr("data-id"),"studentId":id},
-			"success":function(data){
-				  setTimeout(function(){
-			            layer.close(index);
-						layer.msg("退选成功");
-			        },1000);
-			
-				  loadData();
+		var index = layui.layer.open({
+			title : "查看学生信息",
+			type : 2,
+			content : "/shangcheng/studentInfo/view?id="+_this.attr("data-id"),
+			success : function(layero, index){
+				layui.layer.tips('点击此处返回学生信息列表', '.layui-layer-setwin .layui-layer-close', {
+					tips: 3
+				});
+				//$("#layui-layer-iframe"+index).css("height","640px");
 			}
 		})
+		//改变窗口大小时，重置弹窗的高度，防止超出可视区域（如F12调出debug的操作）
+		$(window).resize(function(){
+			layui.layer.full(index);
 		})
+		layui.layer.full(index);
 	})
-
-	function newsList(that){
+	
+	$("body").on("click",".stu_course",function(){  //课程查询
+		var _this = $(this);
+		console.log(_this);
+		var index = layui.layer.open({
+			title : "查看学生所选课程",
+			type : 2,
+			content : "courseList.jsp?id="+_this.attr("data-id"),
+			success : function(layero, index){
+				//$("#layui-layer-iframe"+index).css("height","640px");
+			}
+		})
+		//改变窗口大小时，重置弹窗的高度，防止超出可视区域（如F12调出debug的操作）
+		$(window).resize(function(){
+			layui.layer.full(index);
+		})
+		layui.layer.full(index);
+	})
+	$("body").on("click",".stu_del",function(){  //删除
+		var _this = $(this);
+		layer.confirm('确定删除此信息？',{icon:3, title:'提示信息'},function(index){
+			$.ajax({
+				"url":"/shangcheng/studentInfo/delete",
+				"data":{"ids":_this.attr("data-id")},
+				"success":function(data){
+					layer.msg("删除成功");
+					LoadData();
+				}
+			})
+			layer.close(index);
+		});
+	})
+	
+	function newsList(that,name,course_id,id){
 		//渲染数据
 		function renderDate(data,curr){
 			var dataHtml = '';
@@ -172,22 +212,20 @@ layui.config({
 			if(currData.length != 0){
 				for(var i=0;i<currData.length;i++){
 					dataHtml += '<tr>'
-			    	+'<td><input type="checkbox" name="checked" lay-skin="primary" lay-filter="choose" data-id="'+data[i].id+'"></td>'
-			    	+'<td>'+currData[i].course_id+'</td>'
-			    	+'<td>'+currData[i].course_name+'</td>'
-			    	+'<td>'+currData[i].course_credits+'</td>'
-			    	+'<td>'+currData[i].course_description+'</td>'
-			    	+'<td>'
-					+  '<a class="layui-btn layui-btn-danger layui-btn-mini course_del" data-id="'+data[i].id+'"><i class="layui-icon">&#xe640;</i>退选</a>'
-			        +'</td>'
+			    	+'<td class="stu_id">'+currData[i].course_id+'</td>'
+			    	+'<td class="stu_name">'+currData[i].course_name+'</td>'
+			    	+'<td>'+currData[i].tch_name+'</td>'
+			    	+'<td class="course_id" style="display:none;">'+course_id+'</td>'
+			    	+'<td >'+currData[i].score+'</td>'
 			    	+'</tr>';
 				}
 			}else{
 				dataHtml = '<tr><td colspan="8">暂无数据</td></tr>';
 			}
+			
 		    return dataHtml;
 		}
-
+		
 		//分页
 		var nums = 10; //每页出现的数据量
 		if(that){
@@ -203,4 +241,5 @@ layui.config({
 			}
 		})
 	}
+	
 })

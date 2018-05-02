@@ -118,5 +118,16 @@ public class ScoreAction extends ActionSupport implements Preparable{
 		}
 		return "list";
 	}
-
+	@Action(value="findByStudent",results= {@Result(name = "findByStudent",type="json",params= {"root","msg"})})
+	public String findByStudent() {
+		try {
+			scoreList = scoreService.findByStudent(stu_id);
+			msg.put("state", true);
+			msg.put("scoreList", scoreList);
+		} catch (Exception e) {
+			e.printStackTrace();
+			msg.put("state", false);
+		}
+		return "findByStudent";
+	}
 }

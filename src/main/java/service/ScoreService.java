@@ -78,4 +78,12 @@ public class ScoreService implements IScoreService{
 		return query.list();
 	}
 
+	@Override
+	public List<Score> findByStudent(String stu_id) {
+		String sql = "select * from t_score where stu_id = :stu_id";
+		Query<Score> query = getSession().createNativeQuery(sql, Score.class).setParameter("stu_id", stu_id);
+		return query.list();
+	}
+	
+
 }
